@@ -1,0 +1,118 @@
+# Original relative path: kubernetes-manifests/istio-jaeger.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jaeger
+  namespace: istio-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: istio-system
+  labels:
+    app: jaeger
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/instance: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+        sidecar.istio.io/inject: "false"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "16686"
+    spec:
+      serviceAccountName: jaeger
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:latest
+        ports:
+        - containerPort: 16686
+          name: query
+          protocol: TCP
+        - containerPort: 14250
+          name: grpc
+          protocol: TCP
+        - containerPort: 14268
+          name: collector
+          protocol: TCP
+        - containerPort: 5775
+          name: zipkin
+          protocol: TCP
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
+        - name: SPAN_STORAGE_TYPE
+          value: "memory"
+        - name: COLLECTOR_ZIPKIN_HTTP_PORT
+          value: "9411"
+        - name: MEMORY_MAX_TRACES
+          value: "10000"
+        - name: QUERY_BASE_PATH
+          value: "/jaeger"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 200m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 16686
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 16686
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: istio-system
+  labels:
+    app: jaeger
+spec:
+  type: ClusterIP
+  ports:
+  - name: query
+    port: 16686
+    targetPort: 16686
+  - name: grpc
+    port: 14250
+    targetPort: 14250
+  - name: collector
+    port: 14268
+    targetPort: 14268
+  - name: zipkin
+    port: 9411
+    targetPort: 9411
+  selector:
+    app: jaeger
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracing
+  namespace: istio-system
+  labels:
+    app: jaeger
+spec:
+  type: ClusterIP
+  ports:
+  - name: http-zipkin
+    port: 9411
+    targetPort: 9411
+  selector:
+    app: jaeger
