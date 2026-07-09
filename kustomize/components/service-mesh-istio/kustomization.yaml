@@ -18,6 +18,10 @@ resources:
   - allow-egress-googleapis.yaml
   - frontend-gateway.yaml
   - frontend.yaml
+  - monitor-jaeger.yaml
+  - monitor-kiali.yaml
+  - monitor-prometheus.yaml
+  - monitor-grafana.yaml
 patches:
 # frontend - delete frontend-external service (same as non-public-frontend component)
 - patch: |-
