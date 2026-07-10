@@ -55,7 +55,7 @@ build:
 manifests:
   kustomize:
     paths:
-    - kubernetes-manifests
+    - overlays/dev
 deploy:
   kubectl: {}
 # "gcb" profile allows building and pushing the images
