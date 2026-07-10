@@ -1,4 +1,4 @@
-# Original relative path: kubernetes-manifests/istio-kiali.yaml
+# kiali-server.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -9,8 +9,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: kiali
-  labels:
-    app: kiali
 rules:
 - apiGroups: [""]
   resources: ["configmaps", "namespaces", "nodes", "pods", "services", "serviceaccounts", "endpoints"]
@@ -18,40 +16,14 @@ rules:
 - apiGroups: ["apps"]
   resources: ["deployments", "statefulsets", "replicasets"]
   verbs: ["get", "list", "watch"]
-- apiGroups: ["autoscaling"]
-  resources: ["horizontalpodautoscalers"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["batch"]
-  resources: ["cronjobs", "jobs"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["extensions", "networking.k8s.io"]
-  resources: ["ingresses", "networkpolicies"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["security.istio.io"]
-  resources: ["authorizationpolicies", "peerauthentications", "requestauthentications"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: ["networking.istio.io"]
-  resources: ["destinationrules", "envoyfilters", "gateways", "serviceentries", "sidecars", "virtualservices", "workloadentries", "workloadgroups"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["telemetry.istio.io"]
-  resources: ["telemetries"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["extensions"]
-  resources: ["ingresses"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["cert-manager.io"]
-  resources: ["certificates", "issuers"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: ["gateway.networking.k8s.io"]
-  resources: ["gatewayclasses", "gateways", "httproutes", "referencegrants"]
+  resources: ["destinationrules", "gateways", "virtualservices"]
   verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: kiali
-  labels:
-    app: kiali
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -66,15 +38,12 @@ kind: ConfigMap
 metadata:
   name: kiali
   namespace: istio-system
-  labels:
-    app: kiali
 data:
   config.yaml: |
     auth:
       strategy: anonymous
     deployment:
       accessible_namespaces: ['**']
-      image_version: v1.79
     external_services:
       grafana:
         url: http://grafana:3000
@@ -82,13 +51,6 @@ data:
         url: http://prometheus:9090
       tracing:
         url: http://jaeger-query:16686
-    kiali_feature_flags:
-      clustering:
-        autodetect: true
-      certificates_information_indicator: true
-      istio_upgrade_indicator: true
-      istio_environment_info: true
-    istio_namespace: istio-system
     server:
       port: 20001
       web_root: /kiali
@@ -98,8 +60,6 @@ kind: Deployment
 metadata:
   name: kiali
   namespace: istio-system
-  labels:
-    app: kiali
 spec:
   replicas: 1
   selector:
@@ -109,7 +69,6 @@ spec:
     metadata:
       labels:
         app: kiali
-        sidecar.istio.io/inject: "false"
     spec:
       serviceAccountName: kiali
       containers:
@@ -117,8 +76,6 @@ spec:
         image: quay.io/kiali/kiali:v1.79
         ports:
         - containerPort: 20001
-          name: http
-          protocol: TCP
         env:
         - name: ACTIVE_NAMESPACE
           value: "istio-system"
@@ -135,18 +92,6 @@ spec:
           limits:
             cpu: 200m
             memory: 256Mi
-        readinessProbe:
-          httpGet:
-            path: /kiali/healthz
-            port: 20001
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /kiali/healthz
-            port: 20001
-          initialDelaySeconds: 30
-          periodSeconds: 10
       volumes:
       - name: config
         configMap:
@@ -157,10 +102,7 @@ kind: Service
 metadata:
   name: kiali
   namespace: istio-system
-  labels:
-    app: kiali
 spec:
-  type: ClusterIP
   selector:
     app: kiali
   ports:
