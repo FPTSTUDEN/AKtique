@@ -1,7 +1,5 @@
 # overlays/dev/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
 # Use local images (Skaffold will build)
 # images:
 # - name: frontend
@@ -11,20 +9,21 @@ kind: Kustomization
 #   newName: adservice
 #   newTag: latest
 # ... repeat for all services
-
+kind: Kustomization
 # Add development-specific resources
-resources:
 # - dev-services.yaml  # Optional: dev-specific services
-- ../../base
 # - ../../components/observability/  # Include observability in dev
-- ../../components/istio/          # Optional: include Istio if testing
-
+resources:
+  - ../../base
+components:
+  - ../../components/istio
 # Development-specific patches
-patchesStrategicMerge:
 # - reduce-resources.yaml  # Lower resource limits for dev
-- disable-autoscaling.yaml
-- enable-debug.yaml
-
 # Development labels
-commonLabels:
-  environment: dev
+labels:
+- includeSelectors: true
+  pairs:
+    environment: dev
+# patches:
+# - patch: disable-autoscaling.yaml
+# - patch: enable-debug.yaml

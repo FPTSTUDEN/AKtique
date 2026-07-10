@@ -110,7 +110,7 @@ build:
     useBuildkit: true
 manifests:
   rawYaml:
-  - ./kubernetes-manifests/loadgenerator.yaml
+  - ./base/loadgenerator.yaml
 deploy:
   kubectl: {}
 profiles:
