@@ -1,0 +1,34 @@
+{
+  "title": "Cluster Overview",
+  "tags": ["cluster", "kubernetes"],
+  "uid": "cluster-overview",
+  "panels": [
+    {
+      "title": "Node CPU Usage",
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{id=\"/\"}[5m])) / sum(machine_cpu_cores)",
+          "legendFormat": "CPU Usage"
+        }
+      ]
+    },
+    {
+      "title": "Node Memory Usage",
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{id=\"/\"}) / sum(machine_memory_bytes)",
+          "legendFormat": "Memory Usage"
+        }
+      ]
+    },
+    {
+      "title": "Pod Count",
+      "targets": [
+        {
+          "expr": "count(kube_pod_info)",
+          "legendFormat": "Pods"
+        }
+      ]
+    }
+  ]
+}

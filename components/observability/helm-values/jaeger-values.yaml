@@ -1,0 +1,26 @@
+# components/observability/helm-values/jaeger-values.yaml
+provisionDataStore:
+  cassandra: false
+
+storage:
+  type: memory
+  options:
+    memory:
+      max-traces: 10000
+
+agent:
+  enabled: true
+
+collector:
+  enabled: true
+
+query:
+  enabled: true
+  service:
+    type: ClusterIP
+    port: 16686
+
+# Enable OTLP receiver
+collector:
+  otlp:
+    enabled: true

@@ -15,8 +15,10 @@ kind: Kustomization
 # - ../../components/observability/  # Include observability in dev
 resources:
   - ../../base
+  - port-forward.yaml
 components:
   - ../../components/istio
+  - ../../components/observability
 # Development-specific patches
 # - reduce-resources.yaml  # Lower resource limits for dev
 # Development labels

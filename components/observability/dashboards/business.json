@@ -1,0 +1,54 @@
+{
+  "title": "Business Metrics",
+  "tags": ["business", "application"],
+  "uid": "business-metrics",
+  "panels": [
+    {
+      "title": "Order Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(checkout_orders_total[5m]))",
+          "legendFormat": "Orders/sec"
+        }
+      ]
+    },
+    {
+      "title": "Cart Size Distribution",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(cart_size_bucket[5m])) by (le))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.9, sum(rate(cart_size_bucket[5m])) by (le))",
+          "legendFormat": "P90"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(cart_size_bucket[5m])) by (le))",
+          "legendFormat": "P99"
+        }
+      ]
+    },
+    {
+      "title": "Conversion Funnel",
+      "targets": [
+        {
+          "expr": "sum(product_view_total)",
+          "legendFormat": "Views"
+        },
+        {
+          "expr": "sum(cart_add_total)",
+          "legendFormat": "Added to Cart"
+        },
+        {
+          "expr": "sum(checkout_started_total)",
+          "legendFormat": "Checkouts Started"
+        },
+        {
+          "expr": "sum(checkout_completed_total)",
+          "legendFormat": "Checkouts Completed"
+        }
+      ]
+    }
+  ]
+}

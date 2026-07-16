@@ -1,0 +1,72 @@
+# components/observability/prometheus/rules/recording-rules.yaml
+groups:
+  - name: istio_recording_rules
+    interval: 30s
+    rules:
+      # Application request rate
+      - record: job:istio_requests_total:rate5m
+        expr: sum(rate(istio_requests_total[5m])) by (destination_service, destination_workload, response_code)
+      
+      # Application error rate
+      - record: job:istio_requests_total:rate5m:errors
+        expr: sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_service, destination_workload)
+      
+      # Application success rate
+      - record: job:istio_requests_total:rate5m:success
+        expr: sum(rate(istio_requests_total{response_code!~"5.."}[5m])) by (destination_service, destination_workload)
+      
+      # Application latency
+      - record: job:istio_request_duration_milliseconds:histogram_quantile_p99
+        expr: histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service))
+      
+      - record: job:istio_request_duration_milliseconds:histogram_quantile_p95
+        expr: histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service))
+      
+      - record: job:istio_request_duration_milliseconds:histogram_quantile_p50
+        expr: histogram_quantile(0.50, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service))
+      
+      # Service to service request count
+      - record: job:istio_requests_total:service_to_service
+        expr: sum(rate(istio_requests_total[5m])) by (source_service, source_workload, destination_service, destination_workload)
+      
+      # TCP bytes transferred
+      - record: job:istio_tcp_sent_bytes_total:rate5m
+        expr: sum(rate(istio_tcp_sent_bytes_total[5m])) by (destination_service)
+      
+      - record: job:istio_tcp_received_bytes_total:rate5m
+        expr: sum(rate(istio_tcp_received_bytes_total[5m])) by (destination_service)
+
+  - name: business_recording_rules
+    interval: 30s
+    rules:
+      # Checkout metrics
+      - record: job:checkout_orders_total:rate5m
+        expr: sum(rate(checkout_orders_total[5m]))
+      
+      - record: job:checkout_orders_total:increase_24h
+        expr: sum(increase(checkout_orders_total[24h]))
+      
+      # Cart metrics
+      - record: job:cart_size_total:avg
+        expr: avg(cart_size_total)
+      
+      # Revenue metrics
+      - record: job:order_total_amount:increase_24h
+        expr: sum(increase(order_total_amount[24h]))
+      
+      - record: job:avg_order_value_total:avg
+        expr: avg(avg_order_value_total)
+      
+      # Product metrics
+      - record: job:product_sales_total:top10
+        expr: topk(10, sum(increase(product_sales_total[24h])) by (product_id))
+      
+      # Conversion funnel
+      - record: job:conversion_funnel:view_to_checkout
+        expr: sum(checkout_started_total) / sum(product_view_total)
+      
+      - record: job:conversion_funnel:checkout_to_complete
+        expr: sum(checkout_completed_total) / sum(checkout_started_total)
+      
+      - record: job:conversion_funnel:view_to_complete
+        expr: sum(checkout_completed_total) / sum(product_view_total)

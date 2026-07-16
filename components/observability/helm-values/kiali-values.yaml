@@ -1,0 +1,27 @@
+# components/observability/helm-values/kiali-values.yaml
+auth:
+  strategy: anonymous
+
+deployment:
+  accessible_namespaces: ['**']
+
+external_services:
+  prometheus:
+    url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+  grafana:
+    url: http://prometheus-grafana.monitoring:80
+  tracing:
+    enabled: true
+    use_grpc: true
+    internal_url: "http://jaeger-query.istio-system:16685/jaeger"
+
+kiali_feature_flags:
+  clustering:
+    autodetect: true
+  certificates_information_indicator: true
+  istio_upgrade_indicator: true
+  istio_environment_info: true
+
+server:
+  port: 20001
+  web_root: /kiali

@@ -1,0 +1,121 @@
+# components/observability/prometheus/rules/alerting-rules.yaml
+groups:
+  - name: istio_alerts
+    interval: 30s
+    rules:
+      # High error rate
+      - alert: HighErrorRate
+        expr: |
+          (sum(rate(istio_requests_total{response_code=~"5.."}[5m])) by (destination_service) 
+          / sum(rate(istio_requests_total[5m])) by (destination_service)) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: istio
+        annotations:
+          summary: "High error rate for {{ $labels.destination_service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for service {{ $labels.destination_service }}"
+
+      # High latency
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.99, sum(rate(istio_request_duration_milliseconds_bucket[5m])) by (le, destination_service)) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: istio
+        annotations:
+          summary: "High latency for {{ $labels.destination_service }}"
+          description: "P99 latency is {{ $value }}ms for service {{ $labels.destination_service }}"
+
+      # No traffic
+      - alert: NoTraffic
+        expr: sum(rate(istio_requests_total[5m])) by (destination_service) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: istio
+        annotations:
+          summary: "No traffic for {{ $labels.destination_service }}"
+          description: "Service {{ $labels.destination_service }} has received no traffic in the last 15 minutes"
+
+      # Istiod down
+      - alert: IstiodDown
+        expr: absent(up{job="istiod"})
+        for: 5m
+        labels:
+          severity: critical
+          component: istio
+        annotations:
+          summary: "Istiod is down"
+          description: "Istiod pod is not reporting as up"
+
+  - name: business_alerts
+    interval: 30s
+    rules:
+      # Zero orders
+      - alert: ZeroOrders
+        expr: sum(rate(checkout_orders_total[30m])) == 0
+        for: 30m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "No orders in the last 30 minutes"
+          description: "The application has not processed any orders in the last 30 minutes"
+
+      # High cart abandonment
+      - alert: HighCartAbandonment
+        expr: |
+          (sum(cart_add_total) - sum(checkout_started_total)) / sum(cart_add_total) > 0.8
+        for: 15m
+        labels:
+          severity: warning
+          component: business
+        annotations:
+          summary: "High cart abandonment rate"
+          description: "Cart abandonment rate is {{ $value | humanizePercentage }}"
+
+      # Revenue drop
+      - alert: RevenueDrop
+        expr: |
+          sum(rate(order_total_amount[1h])) / sum(rate(order_total_amount[1h] offset 1h)) < 0.5
+        for: 30m
+        labels:
+          severity: critical
+          component: business
+        annotations:
+          summary: "Significant revenue drop"
+          description: "Revenue has dropped by {{ $value | humanizePercentage }} compared to the previous hour"
+
+  - name: cluster_alerts
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: |
+          (100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) by (instance) * 100)) > 80
+        for: 15m
+        labels:
+          severity: warning
+          component: cluster
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on node {{ $labels.instance }}"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 15m
+        labels:
+          severity: warning
+          component: cluster
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on node {{ $labels.instance }}"
+
+      # Disk space
+      - alert: LowDiskSpace
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})
