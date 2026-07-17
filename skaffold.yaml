@@ -58,6 +58,70 @@ manifests:
     - overlays/dev
 deploy:
   kubectl: {}
+portForward:
+# Application
+- resourceType: service
+  resourceName: frontend
+  namespace: default
+  port: 80
+  localPort: 8080
+
+# ✅ Grafana (in monitoring namespace)
+- resourceType: service
+  resourceName: prometheus-grafana
+  namespace: monitoring
+  port: 80
+  localPort: 3000
+
+# ✅ Prometheus (in monitoring namespace)
+- resourceType: service
+  resourceName: prometheus-kube-prometheus-prometheus
+  namespace: monitoring
+  port: 9090
+  localPort: 9090
+
+# ✅ Jaeger (in istio-system, service name is "jaeger")
+- resourceType: service
+  resourceName: jaeger  # ← Use "jaeger", not "jaeger-query"
+  namespace: istio-system
+  port: 16686
+  localPort: 16686
+
+# ✅ Kiali (in istio-system)
+- resourceType: service
+  resourceName: kiali
+  namespace: istio-system
+  port: 20001
+  localPort: 20001
+
+profiles:
+- name: dev
+  portForward:
+  - resourceType: service
+    resourceName: frontend
+    namespace: default
+    port: 80
+    localPort: 8080
+  - resourceType: service
+    resourceName: prometheus-grafana
+    namespace: monitoring
+    port: 80
+    localPort: 3000
+  - resourceType: service
+    resourceName: prometheus-kube-prometheus-prometheus
+    namespace: monitoring
+    port: 9090
+    localPort: 9090
+  - resourceType: service
+    resourceName: jaeger
+    namespace: istio-system
+    port: 16686
+    localPort: 16686
+  - resourceType: service
+    resourceName: kiali
+    namespace: istio-system
+    port: 20001
+    localPort: 20001
 # "gcb" profile allows building and pushing the images
 # on Google Container Builder without requiring docker
 # installed on the developer machine. However, note that
@@ -66,7 +130,6 @@ deploy:
 #
 # This is not used by default. To use it, run:
 #     skaffold run -p gcb
-profiles:
 - name: gcb
   build:
     googleCloudBuild:

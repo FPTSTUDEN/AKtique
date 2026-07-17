@@ -15,7 +15,6 @@ kind: Kustomization
 # - ../../components/observability/  # Include observability in dev
 resources:
   - ../../base
-  - port-forward.yaml
 components:
   - ../../components/istio
   - ../../components/observability
