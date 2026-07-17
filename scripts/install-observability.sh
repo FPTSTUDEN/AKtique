@@ -45,3 +45,5 @@ echo "📝 Applying observability configurations..."
 kubectl apply -k "${OBSERVABILITY_DIR}"
 
 echo "✅ Observability Stack installed!"
+
+# kubectl get secret --namespace monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
