@@ -13,7 +13,7 @@ external_services:
   tracing:
     enabled: true
     use_grpc: true
-    internal_url: "http://jaeger-query.istio-system:16685/jaeger"
+    internal_url: "http://jaeger-query.istio-system:16685"
 
 kiali_feature_flags:
   clustering:
