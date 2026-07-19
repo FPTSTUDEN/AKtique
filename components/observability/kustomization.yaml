@@ -5,7 +5,6 @@ kind: Component
 resources:
   - prometheus/service-monitors/istio-monitors.yaml
   - jaeger/telemetry.yaml
-  - jaeger/provider.yaml
 
 configMapGenerator:
 # Grafana dashboards
