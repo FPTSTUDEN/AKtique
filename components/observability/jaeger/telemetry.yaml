@@ -1,0 +1,11 @@
+# components/observability/jaeger/telemetry.yaml
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: jaeger
+    randomSamplingPercentage: 100.0  # 100% for dev, use 1% for prod

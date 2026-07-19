@@ -1,0 +1,31 @@
+# components/observability/grafana/datasources.yaml
+apiVersion: 1
+
+datasources:
+  # Jaeger datasource
+  - name: Jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger.istio-system:16686  # ← Changed from jaeger-query
+    isDefault: false
+    editable: true
+    jsonData:
+      nodeGraph:
+        enabled: true
+      traceQuery:
+        timeShiftEnabled: true
+        spanLimit: 1000
+      search:
+        hide: false
+      lokiSearch:
+        datasourceUid: loki
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    isDefault: false
+    editable: true
+    jsonData:
+      timeout: 60s
+      maxLines: 1000

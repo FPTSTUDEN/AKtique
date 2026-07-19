@@ -1,12 +1,7 @@
 # components/observability/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1alpha1 # Use v1alpha1 for components
+apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 
-# This component can be included in any overlay
-# It doesn't create resources itself, but provides configurations
-# that are applied via Helm or as ConfigMaps
-
-# We'll use generators to create ConfigMaps from files
 configMapGenerator:
 # Grafana dashboards
 - name: grafana-dashboards
@@ -21,6 +16,15 @@ configMapGenerator:
   options:
     labels:
       grafana_dashboard: "1"
+
+# ✅ Add Jaeger datasource for Grafana
+- name: grafana-datasources
+  namespace: monitoring
+  files:
+  - grafana/datasources.yaml
+  options:
+    labels:
+      grafana_datasource: "1"
 
 # Prometheus rules
 - name: prometheus-rules
@@ -37,11 +41,15 @@ configMapGenerator:
   namespace: monitoring
   files:
   - prometheus/service-monitors/istio-monitors.yaml
-  # - prometheus/service-monitors/app-monitors.yaml
   options:
     labels:
       prometheus_servicemonitor: "1"
 
-# This component references the Helm values
-# but doesn't install Helm charts directly
-# (That's done by the installation script)
+# ✅ Add Jaeger telemetry
+- name: jaeger-telemetry
+  namespace: istio-system
+  files:
+  - jaeger/telemetry.yaml
+  options:
+    labels:
+      telemetry: "1"
