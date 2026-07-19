@@ -2,6 +2,11 @@
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 
+resources:
+  - prometheus/service-monitors/istio-monitors.yaml
+  - jaeger/telemetry.yaml
+  - jaeger/provider.yaml
+
 configMapGenerator:
 # Grafana dashboards
 - name: grafana-dashboards
@@ -36,20 +41,3 @@ configMapGenerator:
     labels:
       prometheus_rule: "1"
 
-# Prometheus service monitors
-- name: prometheus-service-monitors
-  namespace: monitoring
-  files:
-  - prometheus/service-monitors/istio-monitors.yaml
-  options:
-    labels:
-      prometheus_servicemonitor: "1"
-
-# ✅ Add Jaeger telemetry
-- name: jaeger-telemetry
-  namespace: istio-system
-  files:
-  - jaeger/telemetry.yaml
-  options:
-    labels:
-      telemetry: "1"
