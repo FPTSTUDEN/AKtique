@@ -13,14 +13,11 @@ agent:
 
 collector:
   enabled: true
+  otlp:
+    enabled: true
 
 query:
   enabled: true
   service:
     type: ClusterIP
     port: 16686
-
-# Enable OTLP receiver
-collector:
-  otlp:
-    enabled: true

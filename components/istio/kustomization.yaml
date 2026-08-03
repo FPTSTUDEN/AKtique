@@ -19,6 +19,7 @@ resources:
   - frontend-gateway.yaml
   - frontend.yaml
   - namespace-labels.yaml
+  - istio-config.yaml
 patches:
 # frontend - delete frontend-external service (same as non-public-frontend component)
 - patch: |-

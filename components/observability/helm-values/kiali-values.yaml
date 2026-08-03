@@ -7,14 +7,14 @@ deployment:
 
 external_services:
   prometheus:
-    url: http://prometheus-kube-prometheus-prometheus.monitoring:9090
+    url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
   grafana:
-    url: http://prometheus-grafana.monitoring:80
+    url: http://prometheus-grafana.monitoring.svc.cluster.local:80
   tracing:
     enabled: true
     use_grpc: true
-    internal_url: "http://jaeger.istio-system:16685"  # ← Changed from jaeger-query to jaeger
-    url: "http://jaeger.istio-system:16686"           # ← Added URL for UI
+    internal_url: http://jaeger.istio-system.svc.cluster.local:16685
+    url: http://jaeger.istio-system.svc.cluster.local:16686
 
 kiali_feature_flags:
   clustering:

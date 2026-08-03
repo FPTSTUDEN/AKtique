@@ -4,6 +4,8 @@ kind: Component
 
 resources:
   - prometheus/service-monitors/istio-monitors.yaml
+  - prometheus/service-monitors/envoy-monitor.yaml
+  - prometheus/service-monitors/envoy-pod-monitor.yaml
   - jaeger/telemetry.yaml
 
 configMapGenerator:
