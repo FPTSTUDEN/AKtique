@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+# metadata:
+#   name: not-important
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values: [adservice, cartservice, checkoutservice, currencyservice, emailservice, frontend, paymentservice, productcatalogservice, recommendationservice, redis-cart]
+  template:
+    # metadata:
+    #   labels:
+    #     app: not-important
+    spec:
+      nodeSelector:
+        node.kubernetes.io/instance-type: spot
+      tolerations:
+      - key: spot
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+      containers: []
