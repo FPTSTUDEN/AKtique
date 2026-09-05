@@ -1,7 +1,11 @@
+# components/spot-patch.yaml
+# Add nodeSelector for spot instances (commented out by default)
+# Uncomment the following lines if you want to add nodeSelector as well
 # - op: add
 #   path: /spec/template/spec/nodeSelector
 #   value:
 #     node.kubernetes.io/instance-type: spot
+# Add tolerations for spot nodes
 - op: add
   path: /spec/template/spec/tolerations
   value:
