@@ -142,10 +142,10 @@ profiles:
 
 # "spot" profile to use spot instances with tolerations
 - name: spot
-  patches: # use patch from components/spot-patch.yaml
-  - op: add
-    path: /manifests/kustomize/paths/-
-    value: /components/spot-patch
+  patches: # use the spot scheduling overlay
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: components/spot-patch
 # "gcb" profile allows building and pushing the images
 # on Google Container Builder without requiring docker
 # installed on the developer machine. However, note that
