@@ -25,6 +25,10 @@ labels:
 - includeSelectors: true
   pairs:
     environment: dev
-# patches:
+patches:
+- path: spot-node-patch.yaml
+  target:
+    kind: Deployment
+    labelSelector: "app in (adservice,cartservice,checkoutservice,currencyservice,emailservice,frontend,paymentservice,productcatalogservice,recommendationservice,redis-cart)"
 # - patch: disable-autoscaling.yaml
 # - patch: enable-debug.yaml

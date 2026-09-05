@@ -18,6 +18,7 @@ metadata:
   name: app
 build:
   platforms: ["linux/amd64", "linux/arm64"]
+  # defaultRepo: gcr.io/$(PROJECT_ID) # Property is not supported.
   artifacts:
   # image tags are relative; to specify an image repo (e.g. GCR), you
   # must provide a "default repo" using one of the methods described
@@ -136,6 +137,11 @@ profiles:
       diskSizeGb: 300
       machineType: N1_HIGHCPU_32
       timeout: 4000s
+# Profile for pushing to registry
+- name: push
+  build:
+    local:
+      push: true   # Enable pushing
 # "debug" profile replaces the default Dockerfile in cartservice with Dockerfile.debug,
 # which enables debugging via skaffold.
 #
