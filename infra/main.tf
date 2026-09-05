@@ -64,8 +64,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "spot_user_pool" {
   ]
 
   # 可选：启用自动缩放以适应 Spot 实例的可用性
-  enable_auto_scaling = true
-  min_count           = 0
+  auto_scaling_enabled = true
+  min_count           = 1
   max_count           = 3
 
   # 标签（可选）：便于识别和管理
