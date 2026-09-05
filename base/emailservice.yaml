@@ -46,6 +46,12 @@ spec:
         image: emailservice
         ports:
         - containerPort: 8080
+        startupProbe:
+          periodSeconds: 5
+          failureThreshold: 12
+          timeoutSeconds: 2
+          grpc:
+            port: 8080
         env:
         - name: PORT
           value: "8080"
