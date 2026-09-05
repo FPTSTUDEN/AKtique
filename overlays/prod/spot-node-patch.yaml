@@ -1,0 +1,15 @@
+# - op: add
+#   path: /spec/template/spec/nodeSelector
+#   value:
+#     node.kubernetes.io/instance-type: spot
+- op: add
+  path: /spec/template/spec/tolerations
+  value:
+  - key: spot
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+  - key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: "spot"
+    effect: NoSchedule

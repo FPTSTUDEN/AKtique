@@ -56,7 +56,7 @@ build:
 manifests:
   kustomize:
     paths:
-    - overlays/dev
+    - overlays/prod   # Default to prod
 deploy:
   kubectl: {}
 portForward:
@@ -97,6 +97,10 @@ portForward:
 
 profiles:
 - name: dev
+  patches:
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: overlays/dev
   portForward:
   - resourceType: service
     resourceName: frontend
@@ -123,6 +127,14 @@ profiles:
     namespace: istio-system
     port: 20001
     localPort: 20001
+
+# "prod" profile to explicitly use overlays/prod
+- name: prod
+  patches:
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: overlays/prod
+
 # "gcb" profile allows building and pushing the images
 # on Google Container Builder without requiring docker
 # installed on the developer machine. However, note that
@@ -137,11 +149,13 @@ profiles:
       diskSizeGb: 300
       machineType: N1_HIGHCPU_32
       timeout: 4000s
+
 # Profile for pushing to registry
 - name: push
   build:
     local:
       push: true   # Enable pushing
+
 # "debug" profile replaces the default Dockerfile in cartservice with Dockerfile.debug,
 # which enables debugging via skaffold.
 #
@@ -153,6 +167,7 @@ profiles:
   - op: replace
     path: /build/artifacts/7/docker/dockerfile
     value: Dockerfile.debug
+
 # The "network-policies" profile is not used by default.
 # You can use it in isolation or in combination with other profiles:
 #     skaffold run -p network-policies, debug
@@ -161,6 +176,7 @@ profiles:
   - op: add
     path: /manifests/kustomize/paths/1
     value: kustomize/components/network-policies
+
 ---
 apiVersion: skaffold/v3
 kind: Config

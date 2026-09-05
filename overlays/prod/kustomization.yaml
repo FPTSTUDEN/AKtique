@@ -1,0 +1,29 @@
+# overlays/dev/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+# Use local images (Skaffold will build)
+# images:
+# - name: frontend
+#   newName: frontend
+#   newTag: latest
+# - name: adservice
+#   newName: adservice
+#   newTag: latest
+# ... repeat for all services
+kind: Kustomization
+# Add development-specific resources
+# - dev-services.yaml  # Optional: dev-specific services
+# - ../../components/observability/  # Include observability in dev
+resources:
+  - ../../base
+labels:
+- includeSelectors: true
+  pairs:
+    environment: prod
+patches:
+- path: spot-node-patch.yaml
+  target:
+    kind: Deployment
+    labelSelector: "app in (adservice,cartservice,checkoutservice,currencyservice,emailservice,frontend,paymentservice,productcatalogservice,recommendationservice,redis-cart)"
+
+# - patch: disable-autoscaling.yaml
+# - patch: enable-debug.yaml
