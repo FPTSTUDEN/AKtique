@@ -140,12 +140,6 @@ profiles:
     path: /manifests/kustomize/paths/0
     value: overlays/prod
 
-# "spot" profile to use spot instances with tolerations
-- name: spot
-  patches: # use the spot scheduling overlay
-  - op: replace
-    path: /manifests/kustomize/paths/0
-    value: components/spot-patch
 # "gcb" profile allows building and pushing the images
 # on Google Container Builder without requiring docker
 # installed on the developer machine. However, note that
@@ -178,6 +172,11 @@ profiles:
   - op: replace
     path: /build/artifacts/7/docker/dockerfile
     value: Dockerfile.debug
+
+# Kept for compatibility: spot tolerations are included by the shared
+# Kustomize component, so this profile does not need to alter manifests.
+- name: spot
+  patches: []
 
 # The "network-policies" profile is not used by default.
 # You can use it in isolation or in combination with other profiles:
