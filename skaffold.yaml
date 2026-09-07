@@ -16,87 +16,51 @@ apiVersion: skaffold/v3
 kind: Config
 metadata:
   name: app
+build:
+  platforms: ["linux/amd64", "linux/arm64"]
+  # defaultRepo: gcr.io/$(PROJECT_ID) # Property is not supported.
+  artifacts:
+  # image tags are relative; to specify an image repo (e.g. GCR), you
+  # must provide a "default repo" using one of the methods described
+  # here:
+  # https://skaffold.dev/docs/concepts/#image-repository-handling
+  - image: emailservice
+    context: src/emailservice
+  - image: productcatalogservice
+    context: src/productcatalogservice
+  - image: recommendationservice
+    context: src/recommendationservice
+  - image: shoppingassistantservice
+    context: src/shoppingassistantservice
+  - image: shippingservice
+    context: src/shippingservice
+  - image: checkoutservice
+    context: src/checkoutservice
+  - image: paymentservice
+    context: src/paymentservice
+  - image: currencyservice
+    context: src/currencyservice
+  - image: cartservice
+    context: src/cartservice/src
+    docker:
+      dockerfile: Dockerfile
+  - image: frontend
+    context: src/frontend
+  - image: adservice
+    context: src/adservice
+  tagPolicy:
+    gitCommit: {}
+  local:
+    useDockerCLI: true
+    useBuildkit: true
 manifests:
   kustomize:
     paths:
     - overlays/prod   # Default to prod
 deploy:
   kubectl: {}
-portForward:
-# Application
-- resourceType: service
-  resourceName: frontend
-  namespace: default
-  port: 80
-  localPort: 8080
-
-# ✅ Grafana (in monitoring namespace)
-- resourceType: service
-  resourceName: prometheus-grafana
-  namespace: monitoring
-  port: 80
-  localPort: 3000
-
-# ✅ Prometheus (in monitoring namespace)
-- resourceType: service
-  resourceName: prometheus-kube-prometheus-prometheus
-  namespace: monitoring
-  port: 9090
-  localPort: 9090
-
-# ✅ Jaeger (in istio-system, service name is "jaeger")
-- resourceType: service
-  resourceName: jaeger  # ← Use "jaeger", not "jaeger-query"
-  namespace: istio-system
-  port: 16686
-  localPort: 16686
-
-# ✅ Kiali (in istio-system)
-- resourceType: service
-  resourceName: kiali
-  namespace: istio-system
-  port: 20001
-  localPort: 20001
 
 profiles:
-- name: build
-  build:
-    platforms: ["linux/amd64", "linux/arm64"]
-    # defaultRepo: gcr.io/$(PROJECT_ID) # Property is not supported.
-    artifacts:
-    # image tags are relative; to specify an image repo (e.g. GCR), you
-    # must provide a "default repo" using one of the methods described
-    # here:
-    # https://skaffold.dev/docs/concepts/#image-repository-handling
-    - image: emailservice
-      context: src/emailservice
-    - image: productcatalogservice
-      context: src/productcatalogservice
-    - image: recommendationservice
-      context: src/recommendationservice
-    - image: shoppingassistantservice
-      context: src/shoppingassistantservice
-    - image: shippingservice
-      context: src/shippingservice
-    - image: checkoutservice
-      context: src/checkoutservice
-    - image: paymentservice
-      context: src/paymentservice
-    - image: currencyservice
-      context: src/currencyservice
-    - image: cartservice
-      context: src/cartservice/src
-      docker:
-        dockerfile: Dockerfile
-    - image: frontend
-      context: src/frontend
-    - image: adservice
-      context: src/adservice
-    tagPolicy:
-      gitCommit: {}
-    local:
-      useDockerCLI: true
-      useBuildkit: true
 - name: dev
   # build:
   #   local:
@@ -173,10 +137,6 @@ profiles:
     path: /build/artifacts/7/docker/dockerfile
     value: Dockerfile.debug
 
-# Kept for compatibility: spot tolerations are included by the shared
-# Kustomize component, so this profile does not need to alter manifests.
-- name: spot
-  patches: []
 
 # The "network-policies" profile is not used by default.
 # You can use it in isolation or in combination with other profiles:
