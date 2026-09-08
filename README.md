@@ -1,16 +1,15 @@
+
 <!-- <p align="center">
 <img src="/src/frontend/static/icons/Hipster_HeroLogoMaroon.svg" width="300" alt="Online Boutique" />
 </p> -->
 ![Continuous Integration](https://github.com/GoogleCloudPlatform/microservices-demo/workflows/Continuous%20Integration%20-%20Main/Release/badge.svg)
 
-**Online Boutique** is a cloud-first microservices demo application.  The application is a
+**Online Boutique** is a cloud-first microservices demo application. The application is a
 web-based e-commerce app where users can browse items, add them to the cart, and purchase them.
 
-Google uses this application to demonstrate how developers can modernize enterprise applications using Google Cloud products, including: [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine), [Cloud Service Mesh (CSM)](https://cloud.google.com/service-mesh), [gRPC](https://grpc.io/), [Cloud Operations](https://cloud.google.com/products/operations), [Spanner](https://cloud.google.com/spanner), [Memorystore](https://cloud.google.com/memorystore), [AlloyDB](https://cloud.google.com/alloydb), and [Gemini](https://ai.google.dev/). This application works on any Kubernetes cluster.
+Google uses this application to demonstrate how developers can modernize enterprise applications using Google Cloud products, including: [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine), [Cloud Service Mesh (CSM)](https://cloud.google.com/service-mesh), [gRPC](https://grpc.io/), [Cloud Operations](https://cloud.google.com/products/operations), [Spanner](https://cloud.google.com/spanner), [Memorystore](https://cloud.google.com/memorystore), [AlloyDB](https://cloud.google.com/alloydb), and [Gemini](https://ai.google.dev/). This application works on any Kubernetes cluster, including **Azure Kubernetes Service (AKS)**.
 
-If you’re using this demo, please **★Star** this repository to show your interest!
-
-**Note to Googlers:** Please fill out the form at [go/microservices-demo](http://go/microservices-demo).
+If you're using this demo, please **★Star** this repository to show your interest!
 
 ## Architecture
 
@@ -84,17 +83,182 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 
 4. Congrats! You've deployed the default Online Boutique. To deploy a different variation of Online Boutique (e.g., with Google Cloud Operations tracing, Istio, etc.), see [Deploy Online Boutique variations with Kustomize](#deploy-online-boutique-variations-with-kustomize).
 
+## Azure Deployment with Terraform
 
-## Additional deployment options
+### Prerequisites
+- [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Terraform](https://www.terraform.io/downloads) (v1.0+)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Docker](https://docs.docker.com/get-docker/)
+
+### Quickstart (AKS with Terraform)
+
+1. **Clone the repository**
+   ```sh
+   git clone https://github.com/GoogleCloudPlatform/microservices-demo.git
+   cd microservices-demo
+   ```
+
+2. **Login to Azure**
+   ```sh
+   az login
+   az account set --subscription "YOUR_SUBSCRIPTION_ID"
+   ```
+
+3. **Initialize and apply Terraform**
+   ```sh
+   cd terraform/azure
+   terraform init
+   terraform plan -out=tfplan
+   terraform apply tfplan
+   ```
+
+4. **Configure kubectl**
+   ```sh
+   az aks get-credentials --resource-group online-boutique-rg --name online-boutique-aks
+   ```
+
+5. **Deploy the application using Skaffold**
+   ```sh
+   # Build and push images to GHCR
+   export SKAFFOLD_DEFAULT_REPO=ghcr.io/YOUR_USERNAME
+   skaffold build -p gcb  # Using GCB profile or your local build
+
+   # Deploy to AKS
+   skaffold run -p production --default-repo=ghcr.io/YOUR_USERNAME
+   ```
+
+6. **Access the application**
+   ```sh
+   kubectl get service frontend-external
+   ```
+   Visit the external IP in your browser.
+
+### Terraform Configuration
+
+The Terraform setup provisions:
+- **Azure Resource Group**: `online-boutique-rg`
+- **AKS Cluster**: `online-boutique-aks` with 3 nodes
+- **Azure Container Registry (ACR)**: `onlineboutiqueacr` (optional)
+- **Virtual Network**: With subnet for AKS
+- **Managed Identity**: For AKS to pull from ACR
+
+#### Variables
+Create a `terraform.tfvars` file:
+```hcl
+location          = "eastus"
+environment      = "dev"
+aks_node_count   = 3
+aks_node_vm_size = "Standard_D2s_v3"
+```
+
+## GitHub Container Registry (GHCR) Integration
+
+### Using GHCR with Skaffold
+
+1. **Authenticate with GHCR**
+   ```sh
+   echo $GITHUB_PAT | docker login ghcr.io -u YOUR_USERNAME --password-stdin
+   ```
+
+2. **Update Skaffold Configuration**
+   
+   Add the default repository to your `skaffold.yaml`:
+   ```yaml
+   build:
+     defaultRepo: ghcr.io/YOUR_USERNAME
+     platforms: ["linux/amd64", "linux/arm64"]
+     artifacts:
+     - image: emailservice
+       context: src/emailservice
+     # ... other services
+   ```
+
+3. **Build and Push Images**
+   ```sh
+   # Using local Docker
+   skaffold build --push=true
+
+   # Or using the GCB profile with GHCR
+   skaffold build -p gcb --default-repo=ghcr.io/YOUR_USERNAME
+   ```
+
+4. **Deploy from GHCR**
+   ```sh
+   skaffold run --default-repo=ghcr.io/YOUR_USERNAME
+   ```
+
+### GHCR Package Structure
+
+Your images will be available at:
+```
+ghcr.io/YOUR_USERNAME/emailservice:commit-hash
+ghcr.io/YOUR_USERNAME/frontend:commit-hash
+ghcr.io/YOUR_USERNAME/productcatalogservice:commit-hash
+# ... and so on
+```
+
+## Azure + GHCR Workflow (CI/CD)
+
+### GitHub Actions Example
+
+Create `.github/workflows/deploy-azure.yml`:
+
+```yaml
+name: Deploy to AKS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Login to GHCR
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Login to Azure
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Set AKS context
+      uses: azure/aks-set-context@v1
+      with:
+        resource-group: online-boutique-rg
+        cluster-name: online-boutique-aks
+    
+    - name: Build and push to GHCR
+      run: |
+        export SKAFFOLD_DEFAULT_REPO=ghcr.io/${{ github.actor }}
+        skaffold build --push=true
+    
+    - name: Deploy to AKS
+      run: |
+        skaffold run --default-repo=ghcr.io/${{ github.actor }}
+```
+
+## Additional Deployment Options
 
 - **Istio / Cloud Service Mesh**: [See these instructions](/kustomize/components/service-mesh-istio/README.md) to deploy Online Boutique alongside an Istio-backed service mesh.
 - **Non-GKE clusters (Minikube, Kind, etc)**: See the [Development guide](/docs/development-guide.md) to learn how you can deploy Online Boutique on non-GKE clusters.
 - **AI assistant using Gemini**: [See these instructions](/kustomize/components/shopping-assistant/README.md) to deploy a Gemini-powered AI assistant that suggests products to purchase based on an image.
+- **Azure-specific variations**: See [`/kustomize/components/azure`](/kustomize/components/azure) for Azure-specific configurations.
 - **And more**: The [`/kustomize` directory](/kustomize) contains instructions for customizing the deployment of Online Boutique with other variations.
 
 ## Documentation
 
 - [Development](/docs/development-guide.md) to learn how to run and develop this app locally.
+- [Azure Deployment Guide](/docs/azure-deployment.md) for detailed Azure-specific instructions.
+- [GHCR Setup Guide](/docs/ghcr-setup.md) for GitHub Container Registry configuration.
 
 ## Demos featuring Online Boutique
 
@@ -125,3 +289,11 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 - [Google Cloud Next'18 London – Keynote](https://youtu.be/nIq2pkNcfEI?t=3071)
   showing Stackdriver Incident Response Management
 - [Microservices demo showcasing Go Micro](https://github.com/go-micro/demo)
+```
+
+This updated README includes:
+1. **Azure/Terraform deployment section** with detailed steps
+2. **GHCR integration** with authentication and usage instructions
+3. **CI/CD workflow** example for GitHub Actions
+4. **Azure-specific configurations** and links
+5. **Prerequisites** and variable examples for Terraform
