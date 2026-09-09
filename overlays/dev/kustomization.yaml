@@ -14,10 +14,11 @@ kind: Kustomization
 # - dev-services.yaml  # Optional: dev-specific services
 # - ../../components/observability/  # Include observability in dev
 resources:
-  - ../../base
+- ../../base
 components:
-  - ../../components/istio
-  - ../../components/observability
+- ../../components/istio
+- ../../components/observability
+- ../../components/local-alloydb
 # Development-specific patches
 # - reduce-resources.yaml  # Lower resource limits for dev
 # Development labels
@@ -25,5 +26,3 @@ labels:
 - includeSelectors: true
   pairs:
     environment: dev
-# - patch: disable-autoscaling.yaml
-# - patch: enable-debug.yaml
