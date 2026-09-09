@@ -29,25 +29,25 @@ namespace cartservice.cartstore
 
         public AlloyDBCartStore(IConfiguration configuration)
         {
-            // Create a Cloud Secrets client.
-            SecretManagerServiceClient client = SecretManagerServiceClient.Create();
-            var projectId = configuration["PROJECT_ID"];
-            var secretId = configuration["ALLOYDB_SECRET_NAME"];
-            SecretVersionName secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+            string alloyDBPassword = configuration["DB_PASSWORD"];
+            string alloyDBUser = configuration["DB_USER"] ?? "postgres";
+            string databaseName = configuration["DB_NAME"] ?? configuration["ALLOYDB_DATABASE_NAME"];
+            string primaryIPAddress = configuration["DB_HOST"] ?? configuration["ALLOYDB_PRIMARY_IP"];
+            string port = configuration["DB_PORT"];
 
-            AccessSecretVersionResponse result = client.AccessSecretVersion(secretVersionName);
-            // Convert the payload to a string. Payloads are bytes by default.
-            string alloyDBPassword = result.Payload.Data.ToStringUtf8().TrimEnd('\r', '\n');
-        
-            // TODO: Create a separate user for connecting within the application
-            // rather than using our superuser
-            string alloyDBUser = "postgres";
-            string databaseName = configuration["ALLOYDB_DATABASE_NAME"];
-            // TODO: Consider splitting workloads into read vs. write and take
-            // advantage of the AlloyDB read pools
-            string primaryIPAddress = configuration["ALLOYDB_PRIMARY_IP"];
+            if (string.IsNullOrEmpty(alloyDBPassword))
+            {
+                SecretManagerServiceClient client = SecretManagerServiceClient.Create();
+                var projectId = configuration["PROJECT_ID"];
+                var secretId = configuration["ALLOYDB_SECRET_NAME"];
+                SecretVersionName secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+                AccessSecretVersionResponse result = client.AccessSecretVersion(secretVersionName);
+                alloyDBPassword = result.Payload.Data.ToStringUtf8().TrimEnd('\r', '\n');
+            }
+
             connectionString = "Host="          +
                                primaryIPAddress +
+                               (string.IsNullOrEmpty(port) ? "" : ";Port=" + port) +
                                ";Username="     +
                                alloyDBUser      +
                                ";Password="     +
@@ -55,7 +55,7 @@ namespace cartservice.cartstore
                                ";Database="     +
                                databaseName;
 
-            tableName = configuration["ALLOYDB_TABLE_NAME"];
+            tableName = configuration["DB_TABLE"] ?? configuration["ALLOYDB_TABLE_NAME"];
         }
 
 

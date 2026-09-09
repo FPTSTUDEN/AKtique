@@ -30,8 +30,14 @@ namespace cartservice
             string spannerProjectId = Configuration["SPANNER_PROJECT"];
             string spannerConnectionString = Configuration["SPANNER_CONNECTION_STRING"];
             string alloyDBConnectionString = Configuration["ALLOYDB_PRIMARY_IP"];
+            string databaseHost = Configuration["DB_HOST"];
 
-            if (!string.IsNullOrEmpty(redisAddress))
+            if (!string.IsNullOrEmpty(databaseHost) || !string.IsNullOrEmpty(alloyDBConnectionString))
+            {
+                Console.WriteLine("Creating AlloyDB cart store");
+                services.AddSingleton<ICartStore, AlloyDBCartStore>();
+            }
+            else if (!string.IsNullOrEmpty(redisAddress))
             {
                 services.AddStackExchangeRedisCache(options =>
                 {
@@ -42,11 +48,6 @@ namespace cartservice
             else if (!string.IsNullOrEmpty(spannerProjectId) || !string.IsNullOrEmpty(spannerConnectionString))
             {
                 services.AddSingleton<ICartStore, SpannerCartStore>();
-            }
-            else if (!string.IsNullOrEmpty(alloyDBConnectionString))
-            {
-                Console.WriteLine("Creating AlloyDB cart store");
-                services.AddSingleton<ICartStore, AlloyDBCartStore>();
             }
             else
             {
