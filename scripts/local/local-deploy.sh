@@ -20,7 +20,10 @@ fi
 # Set defaults
 PG_DATABASE=${PG_DATABASE:-carts}
 PG_TABLE=${PG_TABLE:-cart_items}
-PG_HOST=${PG_HOST:-postgres-service}
+PG_HOST=${PG_HOST:-host.docker.internal}
+if [ "$PG_HOST" = "localhost" ]; then
+  PG_HOST=host.docker.internal
+fi
 PG_PORT=${PG_PORT:-5432}
 PG_USER=${PG_USER:-postgres}
 K8S_NAMESPACE=${K8S_NAMESPACE:-default}
@@ -45,26 +48,6 @@ if ! kubectl get secret ${LOCAL_SECRET_NAME} -n ${K8S_NAMESPACE} &>/dev/null; th
     ./scripts/local/local-secret-setup.sh
 fi
 
-# Create a service for PostgreSQL if needed
-echo "Creating PostgreSQL service..."
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres-service
-  namespace: ${K8S_NAMESPACE}
-spec:
-  selector:
-    app: postgres-local
-  ports:
-    - protocol: TCP
-      port: ${PG_PORT}
-      targetPort: ${PG_PORT}
-  type: ClusterIP
-EOF
-
-# cd kustomize/
-
 # Create local component if it doesn't exist
 if [ ! -d "components/local-alloydb" ]; then
     echo "Creating local component..."
@@ -77,7 +60,7 @@ cd overlays/dev
 kustomize edit add component ../../components/local-alloydb 2>/dev/null || echo "Component already exists"
 cd ../../
 
-# Update component with variables
+# Update component with local connection variables
 cat > components/local-alloydb/kustomization.yaml << EOF
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
@@ -97,19 +80,23 @@ patches:
           containers:
           - name: server
             env:
-            - name: DB_HOST
+            - name: REDIS_ADDR
+              \$patch: delete
+            - name: ALLOYDB_PRIMARY_IP
               value: ${PG_HOST}
-            - name: DB_PORT
+            - name: ALLOYDB_PORT
               value: "${PG_PORT}"
-            - name: DB_USER
+            - name: ALLOYDB_DATABASE_NAME
+              value: ${PG_DATABASE}
+            - name: ALLOYDB_TABLE_NAME
+              value: ${PG_TABLE}
+            - name: ALLOYDB_USER
               value: ${PG_USER}
-            - name: DB_PASSWORD
+            - name: ALLOYDB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: ${LOCAL_SECRET_NAME}
                   key: postgresql-password
-            - name: DB_NAME
-              value: ${PG_DATABASE}
 EOF
 
 # Deploy

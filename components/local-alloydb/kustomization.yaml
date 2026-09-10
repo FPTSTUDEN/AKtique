@@ -16,16 +16,20 @@ patches:
           containers:
           - name: server
             env:
-            - name: DB_HOST
-              value: localhost
-            - name: DB_PORT
+            - name: REDIS_ADDR
+              $patch: delete
+            - name: ALLOYDB_PRIMARY_IP
+              value: host.docker.internal
+            - name: ALLOYDB_PORT
               value: "5432"
-            - name: DB_USER
+            - name: ALLOYDB_DATABASE_NAME
+              value: carts
+            - name: ALLOYDB_TABLE_NAME
+              value: cart_items
+            - name: ALLOYDB_USER
               value: postgres
-            - name: DB_PASSWORD
+            - name: ALLOYDB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: alloydb-secret
                   key: postgresql-password
-            - name: DB_NAME
-              value: carts

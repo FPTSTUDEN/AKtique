@@ -25,6 +25,10 @@ PG_PASSWORD=${PG_PASSWORD:-postgres123}
 PG_USER=${PG_USER:-postgres}
 PG_DATABASE=${PG_DATABASE:-carts}
 PG_TABLE=${PG_TABLE:-cart_items}
+PG_HOST=${PG_HOST:-host.docker.internal}
+if [ "$PG_HOST" = "localhost" ]; then
+    PG_HOST=host.docker.internal
+fi
 K8S_NAMESPACE=${K8S_NAMESPACE:-default}
 LOCAL_SECRET_NAME=${LOCAL_SECRET_NAME:-alloydb-secret}
 
@@ -99,10 +103,10 @@ rm -f .env.bak
 
 cat >> .env << EOF
 # Local PostgreSQL settings
-ALLOYDB_PRIMARY_IP=localhost
+ALLOYDB_PRIMARY_IP=${PG_HOST}
 ALLOYDB_READ_IP=localhost
 PG_PASSWORD=${PG_PASSWORD}
-PG_HOST=localhost
+PG_HOST=${PG_HOST}
 PG_PORT=${PG_PORT}
 PG_DATABASE=${PG_DATABASE}
 PG_TABLE=${PG_TABLE}

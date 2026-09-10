@@ -22,7 +22,10 @@ PG_DATABASE=${PG_DATABASE:-carts}
 PG_USER=${PG_USER:-postgres}
 PG_TABLE=${PG_TABLE:-cart_items}
 PG_PORT=${PG_PORT:-5432}
-PG_HOST=${PG_HOST:-postgres-service}  # Kubernetes service name
+PG_HOST=${PG_HOST:-host.docker.internal}
+if [ "$PG_HOST" = "localhost" ]; then
+  PG_HOST=host.docker.internal
+fi
 K8S_NAMESPACE=${K8S_NAMESPACE:-default}
 LOCAL_SECRET_NAME=${LOCAL_SECRET_NAME:-alloydb-secret}
 K8S_SECRET_NAME=${K8S_SECRET_NAME:-alloydb-secret}
@@ -47,11 +50,6 @@ fi
 
 # Create or update Kubernetes secret
 echo "Creating/updating secret ${K8S_SECRET_NAME} in namespace ${K8S_NAMESPACE}..."
-
-# Try to delete existing secret if it exists
-kubectl delete secret ${K8S_SECRET_NAME} -n ${K8S_NAMESPACE} 2>/dev/null || true
-
-# Create secret with all required fields
 kubectl create secret generic ${K8S_SECRET_NAME} \
     -n ${K8S_NAMESPACE} \
     --from-literal=postgresql-password="${PG_PASSWORD}" \
@@ -59,17 +57,8 @@ kubectl create secret generic ${K8S_SECRET_NAME} \
     --from-literal=postgresql-database="${PG_DATABASE}" \
     --from-literal=postgresql-host="${PG_HOST}" \
     --from-literal=postgresql-port="${PG_PORT}" \
-    --from-literal=postgresql-table="${PG_TABLE}"
-
-# Add additional secret if using Google Secret Manager simulation
-if [[ "$1" == "--with-gsm" ]]; then
-    echo "Creating simulated Google Secret Manager secret..."
-    # Create a config map to simulate GSM
-    kubectl create configmap gsm-simulation \
-        -n ${K8S_NAMESPACE} \
-        --from-literal=alloydb-secret-value="${PG_PASSWORD}" \
-        --dry-run=client -o yaml | kubectl apply -f -
-fi
+    --from-literal=postgresql-table="${PG_TABLE}" \
+    --dry-run=client -o yaml | kubectl apply -f -
 
 # Update the deployment to use the local secret
 echo "Updating Kustomize component for local development..."
@@ -86,34 +75,33 @@ patches:
     kind: Deployment
     name: cartservice
   patch: |-
-    - op: replace
-      path: /spec/template/spec/containers/0/env/0
-      value:
-        name: DB_HOST
-        value: ${PG_HOST}
-    - op: replace
-      path: /spec/template/spec/containers/0/env/1
-      value:
-        name: DB_PORT
-        value: "${PG_PORT}"
-    - op: replace
-      path: /spec/template/spec/containers/0/env/2
-      value:
-        name: DB_USER
-        value: ${PG_USER}
-    - op: replace
-      path: /spec/template/spec/containers/0/env/3
-      value:
-        name: DB_PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: ${K8S_SECRET_NAME}
-            key: postgresql-password
-    - op: replace
-      path: /spec/template/spec/containers/0/env/4
-      value:
-        name: DB_NAME
-        value: ${PG_DATABASE}
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: cartservice
+    spec:
+      template:
+        spec:
+          containers:
+          - name: server
+            env:
+            - name: REDIS_ADDR
+              \$patch: delete
+            - name: ALLOYDB_PRIMARY_IP
+              value: ${PG_HOST}
+            - name: ALLOYDB_PORT
+              value: "${PG_PORT}"
+            - name: ALLOYDB_DATABASE_NAME
+              value: ${PG_DATABASE}
+            - name: ALLOYDB_TABLE_NAME
+              value: ${PG_TABLE}
+            - name: ALLOYDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ${K8S_SECRET_NAME}
+                  key: postgresql-password
+            - name: ALLOYDB_USER
+              value: ${PG_USER}
 EOF
 
 echo "✅ Kubernetes secrets setup complete!"
