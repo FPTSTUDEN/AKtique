@@ -36,7 +36,7 @@ Run the [alloydb-setup.sh](./scripts/gke/alloydb-setup.sh) script to provision A
 ### 3. Setup Service Account
 
 ```bash
-./scripts/gke/service-account-setup.sh
+./scripts/gke/alloydb-service-account-setup.sh
 ```
 
 ### 4. Deploy Online Boutique
@@ -44,7 +44,7 @@ Run the [alloydb-setup.sh](./scripts/gke/alloydb-setup.sh) script to provision A
 Run the deployment script:
 
 ```bash
-./scripts/gke/deploy-with-alloydb.sh
+./scripts/gke/alloydb-deploy.sh
 ```
 
 Or manually with Kustomize:
@@ -60,12 +60,12 @@ kubectl apply -k .
 When you're done, remove all resources:
 
 ```bash
-./scripts/gke/cleanup.sh
+./scripts/gke/alloydb-cleanup.sh
 ```
 
 ## Manual Steps Reference
 
 - [Provision AlloyDB](./scripts/gke/alloydb-setup.sh)
-- [Setup Service Account](./scripts/gke/service-account-setup.sh)
-- [Deploy Application](./scripts/gke/deploy-with-alloydb.sh)
-- [Cleanup Resources](./scripts/gke/cleanup.sh)
+- [Setup Service Account](./scripts/gke/alloydb-service-account-setup.sh)
+- [Deploy Application](./scripts/gke/alloydb-deploy.sh)
+- [Cleanup Resources](./scripts/gke/alloydb-cleanup.sh)

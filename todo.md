@@ -1,7 +1,4 @@
 - [ ] tf sensitive keys printed to terminal
 - [ ] tf output file 
 - [ ] skaffold command clarification
-- [ ] makefile: deploy: build if commit changes, then deploy
-- [ ] makefile: RUN should do full cycle, 
-- [ ] ~~run-dev-continuous, run-prod, push-deploy, deploy(cached), build, push~~
-- [ ] dev, dev-cached, run, run-cached, deploy, build, build-push, b-p-d
+- [ ] scripts/ for individual scripts, components/.../README will reference needed scripts and provide individual instructions for the respective component's deployment
