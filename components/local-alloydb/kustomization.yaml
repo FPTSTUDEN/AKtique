@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+patches:
+- target:
+    kind: Deployment
+    name: cartservice
+  patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: cartservice
+    spec:
+      template:
+        spec:
+          containers:
+          - name: server
+            env:
+            - name: REDIS_ADDR
+              $patch: delete
+            - name: ALLOYDB_PRIMARY_IP
+              value: host.docker.internal
+            - name: ALLOYDB_PORT
+              value: "5432"
+            - name: ALLOYDB_DATABASE_NAME
+              value: carts
+            - name: ALLOYDB_TABLE_NAME
+              value: cart_items
+            - name: ALLOYDB_USER
+              value: postgres
+            - name: ALLOYDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: postgresql-password

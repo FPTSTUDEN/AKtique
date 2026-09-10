@@ -70,12 +70,13 @@ profiles:
   - op: replace
     path: /manifests/kustomize/paths/0
     value: overlays/dev
-  portForward:
+  portForward: # activated when running `skaffold dev` or `skaffold debug`
+  # using `skaffold run -p dev` will not activate port forwarding because it is not a dev/debug command
   - resourceType: service
     resourceName: frontend
     namespace: default
     port: 80
-    localPort: 8080
+    localPort: 8000 # Local port to forward to
   - resourceType: service
     resourceName: prometheus-grafana
     namespace: monitoring

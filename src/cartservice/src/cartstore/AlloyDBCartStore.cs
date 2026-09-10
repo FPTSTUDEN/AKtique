@@ -29,15 +29,16 @@ namespace cartservice.cartstore
 
         public AlloyDBCartStore(IConfiguration configuration)
         {
-            // Create a Cloud Secrets client.
-            SecretManagerServiceClient client = SecretManagerServiceClient.Create();
-            var projectId = configuration["PROJECT_ID"];
-            var secretId = configuration["ALLOYDB_SECRET_NAME"];
-            SecretVersionName secretVersionName = new SecretVersionName(projectId, secretId, "latest");
-
-            AccessSecretVersionResponse result = client.AccessSecretVersion(secretVersionName);
-            // Convert the payload to a string. Payloads are bytes by default.
-            string alloyDBPassword = result.Payload.Data.ToStringUtf8().TrimEnd('\r', '\n');
+            string alloyDBPassword = configuration["ALLOYDB_PASSWORD"];
+            if (string.IsNullOrEmpty(alloyDBPassword))
+            {
+                SecretManagerServiceClient client = SecretManagerServiceClient.Create();
+                var projectId = configuration["PROJECT_ID"];
+                var secretId = configuration["ALLOYDB_SECRET_NAME"];
+                SecretVersionName secretVersionName = new SecretVersionName(projectId, secretId, "latest");
+                AccessSecretVersionResponse result = client.AccessSecretVersion(secretVersionName);
+                alloyDBPassword = result.Payload.Data.ToStringUtf8().TrimEnd('\r', '\n');
+            }
         
             // TODO: Create a separate user for connecting within the application
             // rather than using our superuser
@@ -46,8 +47,11 @@ namespace cartservice.cartstore
             // TODO: Consider splitting workloads into read vs. write and take
             // advantage of the AlloyDB read pools
             string primaryIPAddress = configuration["ALLOYDB_PRIMARY_IP"];
+            string port = configuration["ALLOYDB_PORT"] ?? "5432";
             connectionString = "Host="          +
                                primaryIPAddress +
+                               ";Port="         +
+                               port             +
                                ";Username="     +
                                alloyDBUser      +
                                ";Password="     +
