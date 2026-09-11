@@ -60,56 +60,8 @@ kubectl create secret generic ${K8S_SECRET_NAME} \
     --from-literal=postgresql-table="${PG_TABLE}" \
     --dry-run=client -o yaml | kubectl apply -f -
 
-# Update the deployment to use the local secret
-echo "Updating Kustomize component for local development..."
-
-# Create or update kustomization patch for local development
-mkdir -p kustomize/components/local-alloydb
-
-cat > kustomize/components/local-alloydb/kustomization.yaml << EOF
-apiVersion: kustomize.config.k8s.io/v1alpha1
-kind: Component
-
-patches:
-- target:
-    kind: Deployment
-    name: cartservice
-  patch: |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: cartservice
-    spec:
-      template:
-        spec:
-          containers:
-          - name: server
-            env:
-            - name: REDIS_ADDR
-              \$patch: delete
-            - name: ALLOYDB_PRIMARY_IP
-              value: ${PG_HOST}
-            - name: ALLOYDB_PORT
-              value: "${PG_PORT}"
-            - name: ALLOYDB_DATABASE_NAME
-              value: ${PG_DATABASE}
-            - name: ALLOYDB_TABLE_NAME
-              value: ${PG_TABLE}
-            - name: ALLOYDB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ${K8S_SECRET_NAME}
-                  key: postgresql-password
-            - name: ALLOYDB_USER
-              value: ${PG_USER}
-EOF
 
 echo "✅ Kubernetes secrets setup complete!"
-echo ""
-echo "To deploy with local PostgreSQL:"
-echo "  cd kustomize/"
-echo "  kustomize edit add component components/local-alloydb"
-echo "  kubectl apply -k ."
 echo ""
 echo "To verify the secret:"
 echo "  kubectl get secret ${K8S_SECRET_NAME} -n ${K8S_NAMESPACE} -o yaml"
