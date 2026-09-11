@@ -18,7 +18,7 @@ if [ -z "$PROJECT_ID" ]; then
 fi
 
 # Set defaults for local development
-PG_IMAGE=${PG_IMAGE:-postgres:16-alpine}
+PG_IMAGE=${PG_IMAGE:-pgvector/pgvector:pg16}
 PG_CONTAINER_NAME=${PG_CONTAINER_NAME:-alloydb-local}
 PG_PORT=${PG_PORT:-5432}
 PG_PASSWORD=${PG_PASSWORD:-postgres123}
@@ -86,6 +86,40 @@ fi
 echo "🗄️ Creating table..."
 docker exec ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d ${PG_DATABASE} -c "CREATE TABLE IF NOT EXISTS ${PG_TABLE} (userId text, productId text, quantity int, PRIMARY KEY(userId, productId))" 2>/dev/null || echo "Table already exists"
 docker exec ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d ${PG_DATABASE} -c "CREATE INDEX IF NOT EXISTS cartItemsByUserId ON ${PG_TABLE}(userId)" 2>/dev/null || echo "Index already exists"
+
+# Create products database
+echo "🗄️ Creating products database..."
+docker exec ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d postgres \
+  -c "SELECT 1 FROM pg_database WHERE datname='products'" | grep -q 1 \
+  || docker exec ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d postgres \
+       -c "CREATE DATABASE products"
+
+# pgvector extension
+docker exec ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d products \
+  -c "CREATE EXTENSION IF NOT EXISTS vector"
+
+# Schema (idempotent)
+docker exec -i ${PG_CONTAINER_NAME} psql -U ${PG_USER} -d products <<'SQL'
+CREATE TABLE IF NOT EXISTS catalog_items (
+  id                    TEXT PRIMARY KEY,
+  name                  TEXT NOT NULL,
+  description           TEXT,
+  picture               TEXT,
+  price_usd_currency_code TEXT,
+  price_usd_units       INTEGER,
+  price_usd_nanos       BIGINT,
+  categories            TEXT[],
+  product_embedding     vector(768),
+  embed_model           TEXT,
+  content_hash          TEXT NOT NULL,
+  updated_at            TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS catalog_items_embedding_idx
+  ON catalog_items USING hnsw (product_embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS catalog_items_categories_idx
+  ON catalog_items USING gin (categories);
+SQL
+
 
 # Get container IP address
 PG_IP=$(docker inspect ${PG_CONTAINER_NAME} --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
